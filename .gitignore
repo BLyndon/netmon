@@ -1,0 +1,9 @@
+# Ignore compiled binary
+netmon
+
+# Ignore log files
+*.log
+*.err
+
+# Ignore macOS metadata files
+.DS_Store
