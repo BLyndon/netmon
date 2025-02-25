@@ -10,10 +10,13 @@ import (
 )
 
 const (
-	monitorInterval = 2 * time.Second // Check traffic every 2 seconds
-	thresholdMBps   = 1               // Alert if traffic exceeds this value in MBps
-	changeThreshold = 0.1             // Only log if traffic change is >= 0.1 MBps
+	monitorInterval      = 2 * time.Second  // Check traffic every 2 seconds
+	thresholdMBps        = 1                // Alert if traffic exceeds this value in MBps
+	changeThreshold      = 0.1              // Only log if traffic change is >= 0.1 MBps
+	notificationCooldown = 10 * time.Second // Cooldown period after showing a notification
 )
+
+var lastNotificationTime time.Time
 
 func GetNetworkStats() (int64, int64, error) {
 	cmd := exec.Command("netstat", "-ib")
@@ -39,8 +42,11 @@ func GetNetworkStats() (int64, int64, error) {
 }
 
 func ShowMacOSNotification(message string) {
-	cmd := exec.Command("osascript", "-e", fmt.Sprintf(`display notification "%s" with title "🚨 Network Alert"`, message))
-	_ = cmd.Run()
+	if time.Since(lastNotificationTime) > notificationCooldown {
+		cmd := exec.Command("osascript", "-e", fmt.Sprintf(`display notification "%s" with title "🚨 Network Alert"`, message))
+		_ = cmd.Run()
+		lastNotificationTime = time.Now() // Update the last notification time
+	}
 }
 
 func MonitorTraffic() {
@@ -70,7 +76,6 @@ func MonitorTraffic() {
 				}
 			}
 
-			// Update previous values for next check
 			prevRxRate, prevTxRate = rxRate, txRate
 		}
 
